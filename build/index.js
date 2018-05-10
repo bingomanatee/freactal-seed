@@ -112,7 +112,7 @@ var external__lodash__default = /*#__PURE__*/__webpack_require__.n(external__lod
       }
       this._effectsMap = new Map();
       this._initializers = [];
-      if (this.serializationSource === Seed.SERIALIZATION_LOCAL_STORAGE) {
+      if (this.serializationSource === container.SEED_SERIALIZATION_LOCAL_STORAGE) {
         this.addLocalStorageMiddleware();
       }
     }
@@ -310,6 +310,15 @@ var external__lodash__default = /*#__PURE__*/__webpack_require__.n(external__lod
     return {};
   });
 
+  bottle.factory('DOMException', () => {
+    if (!external__lodash__default.a.isUndefined(DOMException)) {
+      return DOMException;
+    } else {
+      class NotDomException {}
+      return NotDomException;
+    }
+  });
+
   bottle.factory('isStorageAvailable', container => function (type) {
     /**
      * this has been extracted from https://developer.mozilla.org/en-US/docs/Web/API/Web_Storage_API/Using_the_Web_Storage_API
@@ -322,18 +331,7 @@ var external__lodash__default = /*#__PURE__*/__webpack_require__.n(external__lod
       storage.removeItem(x);
       return true;
     } catch (e) {
-      return e instanceof DOMException && (
-      // everything except Firefox
-      e.code === 22 ||
-      // Firefox
-      e.code === 1014 ||
-      // test name field too, because code might not be present
-      // everything except Firefox
-      e.name === 'QuotaExceededError' ||
-      // Firefox
-      e.name === 'NS_ERROR_DOM_QUOTA_REACHED') &&
-      // acknowledge QuotaExceededError only if there's something already stored
-      storage.length !== 0;
+      return false;
     }
   });
   bottle.factory('localStorage', container => {
@@ -461,7 +459,27 @@ var external__lodash__default = /*#__PURE__*/__webpack_require__.n(external__lod
 var external__react_ = __webpack_require__(1);
 var external__react__default = /*#__PURE__*/__webpack_require__.n(external__react_);
 
+// EXTERNAL MODULE: external "freactal"
+var external__freactal_ = __webpack_require__(5);
+var external__freactal__default = /*#__PURE__*/__webpack_require__.n(external__freactal_);
+
+// CONCATENATED MODULE: ./src/freactal.js
+
+
+/* harmony default export */ var freactal = (bottle => {
+  /**
+   * Note - all definition must be done BEFORE getWrapper is called.
+   * Also, this method binds the current version of Freactal to the one bound by this
+   * module. To use another version of Freactal, don't use getWrapper --
+   * call provideState from your version of freactal.
+   */
+  bottle.factory('getWrapper', () => seedInstance => Object(external__freactal_["provideState"])(seedInstance));
+  bottle.factory('injectState', () => external__freactal_["injectState"]);
+  bottle.factory('update', () => external__freactal_["update"]);
+});
 // CONCATENATED MODULE: ./src/init.js
+
+
 
 
 
@@ -478,6 +496,7 @@ var external__react__default = /*#__PURE__*/__webpack_require__.n(external__reac
   src_Seed(bottle);
   src_localStorage(bottle);
   serialization(bottle);
+  freactal(bottle);
 
   bottle.constant('React', external__react__default.a);
   bottle.constant('Component', external__react_["Component"]);
@@ -493,6 +512,11 @@ const src_bottle = init();
 const src_Seed_0 = src_bottle.container.Seed;
 /* harmony default export */ var src = __webpack_exports__["default"] = (() => src_bottle.container.Seed);
 
+/**
+ * note - you can modify bottle injectables
+ * at any point before you call the default method
+ * and instantiate your Seed.
+ */
 
 
 /***/ }),
@@ -500,6 +524,12 @@ const src_Seed_0 = src_bottle.container.Seed;
 /***/ (function(module, exports) {
 
 module.exports = require("bottlejs");
+
+/***/ }),
+/* 5 */
+/***/ (function(module, exports) {
+
+module.exports = require("freactal");
 
 /***/ })
 /******/ ]);

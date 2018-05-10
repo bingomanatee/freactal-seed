@@ -11,8 +11,8 @@ export default (bottle) => {
         }
         this._effectsMap = new Map();
         this._initializers = [];
-        if (this.serializationSource === Seed.SERIALIZATION_LOCAL_STORAGE) {
-          this.addLocalStorageMiddleware()
+        if (this.serializationSource === container.SEED_SERIALIZATION_LOCAL_STORAGE) {
+          this.addLocalStorageMiddleware();
         }
       }
       get initialState () {
