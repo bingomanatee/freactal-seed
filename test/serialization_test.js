@@ -7,13 +7,10 @@ tap.test('serialize', (serSuite) => {
 
   serSuite.test('object', (objectTest) => {
     let obj = {foo: 1, bar: 'two'};
-
-    let ser = serialize(obj, SEED_TYPE_OBJECT);
-    objectTest.equal(ser, '{"foo":1,"bar":"two"}');
+    objectTest.equal(serialize(obj, SEED_TYPE_OBJECT), '{"foo":1,"bar":"two"}');
 
     objectTest.test('bad Object', (objectBadTest) => {
       let obj = {foo: 1, bar: 'two'};
-
       obj.obj = obj; // ugly recursion
 
       let ser = serialize(obj, SEED_TYPE_OBJECT);
@@ -26,32 +23,36 @@ tap.test('serialize', (serSuite) => {
   });
 
   serSuite.test('int', (intTest) => {
-
-    const int = 42;
-    let intSer = serialize(int, SEED_TYPE_INT);
-
-    intTest.equal(intSer, '42');
+    intTest.equal(serialize(42, SEED_TYPE_INT), '42');
 
     intTest.test('badInt', (badIntTest) => {
-
-      const badInt = 'forty two';
-      let badIntSer = serialize(badInt, SEED_TYPE_INT);
-      badIntTest.equal(badIntSer, '0');
-
+      badIntTest.equal(serialize( 'forty two', SEED_TYPE_INT), '0');
       badIntTest.end();
     });
     intTest.end();
   });
 
   serSuite.test('string', (stringTest) => {
-
     let foo = 'foo';
-
-    let fooSer = serialize(foo, SEED_TYPE_STRING);
-    stringTest.equal(fooSer, 'foo');
+    stringTest.equal( serialize(foo, SEED_TYPE_STRING), 'foo');
 
     stringTest.end();
   });
+
+  serSuite.test('bool', (boolTest) => {
+
+    boolTest.equal(serialize(true, SEED_TYPE_BOOLEAN), '1');
+    boolTest.equal(serialize('truthy string', SEED_TYPE_BOOLEAN), '1');
+    boolTest.equal(serialize(false, SEED_TYPE_BOOLEAN), '0');
+
+    boolTest.end();
+  });
+
+  serSuite.test('float', (floatTest) => {
+    floatTest.equal(serialize(Math.PI, SEED_TYPE_FLOAT), '3.141592653589793');
+    floatTest.end();
+  })
+
   serSuite.end();
 });
 tap.test('deserialize', (dsSuite) => {
@@ -61,8 +62,7 @@ tap.test('deserialize', (dsSuite) => {
  dsSuite.test('object', (objectTest) => {
     let obj = {foo: 1, bar: 'two'};
     let str = '{"foo":1,"bar":"two"}';
-    let ser = deserialize(str, SEED_TYPE_OBJECT);
-    objectTest.same(ser, obj);
+    objectTest.same( deserialize(str, SEED_TYPE_OBJECT), obj);
 
     objectTest.end();
   });
@@ -70,26 +70,26 @@ tap.test('deserialize', (dsSuite) => {
   dsSuite.test('int', (intTest) => {
 
     const int = 42;
-    let intSer = deserialize('42', SEED_TYPE_INT);
-
-    intTest.equal(intSer, int);
+    intTest.equal(deserialize('42', SEED_TYPE_INT), int);
+    intTest.equal(deserialize('1.5', SEED_TYPE_INT), 1);
 
     intTest.test('badInt', (badIntTest) => {
       const badInt = 'forty two';
-      let badIntSer = deserialize(badInt, SEED_TYPE_INT);
-      badIntTest.equal(badIntSer, 0);
+      badIntTest.equal(deserialize(badInt, SEED_TYPE_INT), 0);
 
       badIntTest.end();
     });
     intTest.end();
   });
 
+  dsSuite.test('float', (floatTest)=> {
+    floatTest.equal(deserialize('1.23', SEED_TYPE_FLOAT), 1.23);
+    floatTest.end();
+  });
+
   dsSuite.test('string', (stringTest) => {
-
     let foo = 'foo';
-
-    let fooSer = deserialize(foo, SEED_TYPE_STRING);
-    stringTest.equal(fooSer, 'foo');
+    stringTest.equal(deserialize(foo, SEED_TYPE_STRING), 'foo');
 
     stringTest.end();
   });

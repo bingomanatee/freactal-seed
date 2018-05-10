@@ -391,6 +391,13 @@ var external__lodash__default = /*#__PURE__*/__webpack_require__.n(external__lod
         }
         break;
 
+      case container.SEED_TYPE_FLOAT:
+        out = parseFloat(value);
+        if (isNaN(out)) {
+          out = 0;
+        }
+        break;
+
       // note - booleans are serialized into '1' or '0';
       case container.SEED_TYPE_BOOLEAN:
         out = out === '1';
@@ -425,6 +432,10 @@ var external__lodash__default = /*#__PURE__*/__webpack_require__.n(external__lod
         break;
 
       case container.SEED_TYPE_INT:
+        out = isNaN(value) ? '0' : Math.floor(value).toString();
+        break;
+
+      case container.SEED_TYPE_FLOAT:
         out = isNaN(value) ? '0' : value.toString();
         break;
 
