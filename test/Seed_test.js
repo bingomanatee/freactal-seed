@@ -32,7 +32,7 @@ tap.test('Seed', (suite) => {
     apeTest.end();
   });
 
-  suite.test('addArrayPropAndSetEffects',  (aapTest) => {
+  suite.test('addArrayPropAndSetEffects', (aapTest) => {
 
     aapTest.test('core methods', async (aapcTest) => {
 
@@ -58,7 +58,7 @@ tap.test('Seed', (suite) => {
       aapeTest.same(getState().hotDudes, [10, 9, 10, 8, 6], 'pushing a not hot dude');
       await effects.unshiftToHotDudes(3);
       aapeTest.same(getState().hotDudes, [3, 10, 9, 10, 8, 6], 'shifting a not hot dude');
-      await effects.mapHotDudes((n) => n/2);
+      await effects.mapHotDudes((n) => n / 2);
       aapeTest.same(getState().hotDudes, [1.5, 5, 4.5, 5, 4, 3], 'half as hot');
 
       aapeTest.end();
@@ -68,8 +68,7 @@ tap.test('Seed', (suite) => {
   });
 
 
-
-  suite.test('addSideEffect',  (seTest) => {
+  suite.test('addSideEffect', (seTest) => {
 
     seTest.test('method that returns a promise', async (serTest) => {
       let resolve = null;
@@ -88,12 +87,12 @@ tap.test('Seed', (suite) => {
       let mockGetUserAPI = (effects) => new Promise((success) => {
           resolve = success;
         })
-        // note the promise is returned. so the "then" of the side effect awaits return of data.
+      // note the promise is returned. so the "then" of the side effect awaits return of data.
       // however we are manually calling resolve to delay satisfaction.
 
       mySeed.addSideEffect('loadUser', (effects) => mockGetUserAPI(effects)
-      .then((user) => effects.setUser(user)));
-        // unlike the other side effect test  in this case we are chaining
+        .then((user) => effects.setUser(user)));
+      // unlike the other side effect test  in this case we are chaining
       // the API's promise to the effect
 
       const {getState, effects} = wrap();
@@ -142,6 +141,35 @@ tap.test('Seed', (suite) => {
 
       await Promise.resolve(); // allow user set effect to kick in.
       senrTest.same(getState().user, {id: 1, name: 'fred'}, 'user loaded');
+    })
+
+    seTest.test('with argument', async (sargTest) => {
+      let resolve = null;
+      const {mySeed, bottle, wrap} = _init();
+      mySeed.addIntAndSetEffect('hits', 0);
+      mySeed.addEffect('incHits', (effects, hits) => {
+        return (state) => {
+          hits += state.hits;
+          return {hits};
+        }
+      })
+
+      mySeed.addSideEffect('getMoreHits', (effects, hits) => {
+        Promise.resolve()
+                      .then(() => effects.incHits(hits))
+      });
+
+      const {getState, effects} = wrap();
+
+      sargTest.same(getState().hits, 0, 'starts with no hits');
+      effects.getMoreHits(4);
+      await Promise.resolve();
+      sargTest.same(getState().hits, 4, 'has 4 now');
+      effects.getMoreHits(3);
+      await Promise.resolve()
+      sargTest.same(getState().hits, 7, 'has 7 now');
+
+      sargTest.end();
     })
 
     seTest.end();

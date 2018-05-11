@@ -239,23 +239,19 @@ var external__lodash__default = /*#__PURE__*/__webpack_require__.n(external__lod
 
     /**
      * do an effect that does not mutate state. It affects things besides state,
-     * so the side effect executes and the state is unmodified. You don't have to return
-     * a state mutator from the method; it's managed for you.
+     * so the side effect executes and the effect returns state unmodified. .
      *
      * @param name {String}
      * @param method {function}
      */
     addSideEffect(name, method) {
-      this.addEffect(name, effects => {
+      this.addEffect(name, function (effects, ...args) {
         if (external__lodash__default.a.isString(method)) {
-          return effects[method](effects).then(container.noop);
-        }
-        let result = method(effects);
-        if (result && result.then) {
-          return result.then(() => container.noop);
-        } else {
+          effects[method](effects, ...args);
           return container.noop;
         }
+        method(effects, ...args);
+        return container.noop;
       });
     }
 
