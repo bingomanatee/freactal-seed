@@ -1,28 +1,30 @@
 {
   "name": "freactal-seed",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "An extension of Freactal that allows for parametric configuration of the state seed",
-  "main": "index.js",
+  "main": "build/index.js",
   "scripts": {
     "build": "neutrino build",
     "start": "neutrino start",
     "test" : "node test"
   },
-  "keywords": [],
-  "author": "",
+  "homepage": "https://github.com/bingomanatee/freactal-seed",
+  "repository": "https://github.com/bingomanatee/freactal-seed",
+  "keywords": ["freactal", "react", "state"],
+  "author": "David Edelhart",
   "license": "ISC",
   "engines": {
     "node": ">=8.9.4"
   },
   "devDependencies": {
     "@neutrinojs/node": "^8.2.3",
-    "neutrino": "^8.2.3"
+    "neutrino": "^8.2.3",
+    "tap": "^11.1.5"
   },
   "dependencies": {
     "bottlejs": "^1.7.1",
     "freactal": "^2.0.3",
     "lodash": "^4.17.10",
-    "react": "^16.3.2",
-    "tap": "^11.1.5"
+    "react": "^16.3.2"
   }
 }
