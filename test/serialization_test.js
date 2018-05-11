@@ -70,12 +70,12 @@ tap.test('deserialize', (dsSuite) => {
   dsSuite.test('int', (intTest) => {
 
     const int = 42;
-    intTest.equal(deserialize('42', SEED_TYPE_INT), int);
-    intTest.equal(deserialize('1.5', SEED_TYPE_INT), 1);
+    intTest.equal(deserialize('42', SEED_TYPE_INT), int, 'int deserialized');
+    intTest.equal(deserialize('1.5', SEED_TYPE_INT), 1, 'float deserialized to int');
 
     intTest.test('badInt', (badIntTest) => {
       const badInt = 'forty two';
-      badIntTest.equal(deserialize(badInt, SEED_TYPE_INT), 0);
+      badIntTest.equal(deserialize(badInt, SEED_TYPE_INT), 0, 'string deserialized to zero');
 
       badIntTest.end();
     });
@@ -83,7 +83,7 @@ tap.test('deserialize', (dsSuite) => {
   });
 
   dsSuite.test('float', (floatTest)=> {
-    floatTest.equal(deserialize('1.23', SEED_TYPE_FLOAT), 1.23);
+    floatTest.equal(deserialize('1.23', SEED_TYPE_FLOAT), 1.23, 'float deserialized');
     floatTest.end();
   });
 

@@ -1,11 +1,12 @@
 {
   "name": "freactal-seed",
   "version": "1.0.0",
-  "description": "",
+  "description": "An extension of Freactal that allows for parametric configuration of the state seed",
   "main": "index.js",
   "scripts": {
     "build": "neutrino build",
-    "start": "neutrino start"
+    "start": "neutrino start",
+    "test" : "node test"
   },
   "keywords": [],
   "author": "",

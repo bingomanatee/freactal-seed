@@ -7,7 +7,8 @@ export default (bottle) => {
    * module. To use another version of Freactal, don't use getWrapper --
    * call provideState from your version of freactal.
    */
-  bottle.factory('getWrapper', () => (seedInstance) => provideState(seedInstance));
+  bottle.factory('getWrapper', (container) => (seedInstance) => container.provideState(seedInstance));
   bottle.factory('injectState', () => injectState);
   bottle.factory('update', () => update);
+  bottle.factory('provideState', () => provideState)
 }
