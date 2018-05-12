@@ -3,6 +3,8 @@ seed object that defines state for a Freactal project. As it stands,
 you have to manually create set and initializing for each property in
 Freactal.
 
+Check out our [demo site](https://flamboyant-keller-9edb9a.netlify.com/#/)
+
 ## Advantages
 
 The base state object that Freactal uses is a single object.
