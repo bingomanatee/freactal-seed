@@ -1,6 +1,6 @@
 {
   "name": "freactal-seed",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "An extension of Freactal that allows for parametric configuration of the state seed",
   "main": "build/index.js",
   "scripts": {

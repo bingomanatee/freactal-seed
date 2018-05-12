@@ -8,3 +8,7 @@ initial commits; some cleanup of package.json
 
 ensured all Side Effects return noop.
 Allowed argments to side effects.
+
+## 0.0.4
+
+adjusted shift(To) in code and readme

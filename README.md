@@ -148,8 +148,8 @@ of the methods you want.
 ```` javascript
 mySeed.addArrayPropAndSetEffects('shoppingCart', []);
 // -- in a component
-this.props.effects.pushShoppingCart({id: 100, cost, 3.5, count, 2 item: 'spam'});
-this.props.effects.shiftShoppingCart({id: 150, cost: 1.25, count: 4, item: 'spam'});
+this.props.effects.pushToShoppingCart({id: 100, cost, 3.5, count, 2 item: 'spam'});
+this.props.effects.unshiftToShoppingCart({id: 150, cost: 1.25, count: 4, item: 'spam'});
 this.props.effects.setElementShoppingCart(2, {id: 200, cost: 1, count: 1 item: 'yam'});
 this.props.effects.mapShoppingCart((item) => {
 if (item.id === 200) item.count += 1;
