@@ -11,4 +11,8 @@ Allowed argments to side effects.
 
 ## 0.0.4
 
-adjusted shift(To) in code and readme
+adjusted `shift(To` in code and README
+
+## 0.0.5
+
+added `addStateSideEffect`

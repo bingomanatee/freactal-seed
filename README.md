@@ -120,22 +120,36 @@ of a method that calls effects or waits for an async operation. The
 effects *it calls* may in turn trigger state change, but the side effect
 itself is assumed to NOT directly change the state.
 
-Unlike most effects, a side effect does NOT have to return a promise --
-or anything at all.
-* if *nothing* is returned, OR if something that is not a promise is returned,
-  a "noop" function is returned, so the side effect does not directly alter the state.
-* If a *Promise* is returned, the promise is chained with a noop returner.
+addSideEffect runs your method and returns a "noop" state modifier -- i.e.,
+it doesnt *directly* modify state. (you might however modify state with inside methods.
 
 ```` javascript
 
 mySeed.addPropAndSetEffect('user', 0, bottle.container.SEED_TYPE_OBJECT);
 mySeed.addSideEffect('loadUser', (effects, id) => {
-    fetch('/users/' + id')
+    fetch('/users/' + id)
     .then((response) => response.json)
     .then((user) => effects.setUser(user));
 });
 
 ````
+
+### `addStateSideEffect(name, method)`
+
+```` javascript
+ mySeed.addArrayPropAndSetEffects('ducks', 'Huey,Louie,Dewey'.split(','));
+ mySeed.addStateSideEffect('cloneLastDuck', (effects, state, clone) => {
+    let ducks = state.ducks.slice(0);
+    let base = ducks.pop();
+    ducks.push(base);
+    for (let n = 2; n < clone + 1; ++n) ducks.push(`${base} ${n}`)
+    effects.setDucks(ducks);
+  });
+---- in component code ---
+effects.cloneLastDuck(4);
+// sets ducks to ['Huey','Louie','Dewey','Dewey 2','Dewey 3','Dewey 4']
+````
+like addSideEffect, except it adds state to the arguments;
 
 ### `addArrayPropAndSetEffects(name, value, methods?)`
 Calls `addPropAndSetEffect` and adds several methods:

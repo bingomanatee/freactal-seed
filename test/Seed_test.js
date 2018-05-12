@@ -32,6 +32,42 @@ tap.test('Seed', (suite) => {
     apeTest.end();
   });
 
+  suite.test('addStateSideEffect', (assTest) => {
+    assTest.test('basic', async (bassTest) => {
+      const {mySeed, bottle, wrap} = _init();
+      mySeed.addArrayPropAndSetEffects('ducks', 'Huey,Louie,Dewey'.split(','));
+      mySeed.addStateSideEffect('switchDucks', (effects, state) => {
+        effects.setDucks(state.ducks.reverse());
+      });
+      const {getState, effects} = wrap();
+      effects.switchDucks();
+      await Promise.resolve();
+
+      bassTest.same(getState().ducks, 'Dewey,Louie,Huey'.split(','), 'ducks reversed');
+      bassTest.end();
+    })
+
+    assTest.test('with params', async (bassTest) => {
+      const {mySeed, bottle, wrap} = _init();
+      mySeed.addArrayPropAndSetEffects('ducks', 'Huey,Louie,Dewey'.split(','));
+      mySeed.addStateSideEffect('cloneLastDuck', (effects, state, clone) => {
+        let ducks = state.ducks.slice(0);
+        let base = ducks.pop();
+        ducks.push(base);
+        for (let n = 2; n < clone + 1; ++n) ducks.push(`${base} ${n}`)
+        effects.setDucks(ducks);
+      });
+      const {getState, effects} = wrap();
+      effects.cloneLastDuck(4);
+      await Promise.resolve();
+
+      bassTest.same(getState().ducks, 'Huey,Louie,Dewey,Dewey 2,Dewey 3,Dewey 4'.split(','), 'ducks cloned');
+      bassTest.end();
+    })
+
+    assTest.end();
+  });
+
   suite.test('addArrayPropAndSetEffects', (aapTest) => {
 
     aapTest.test('core methods', async (aapcTest) => {
@@ -156,7 +192,7 @@ tap.test('Seed', (suite) => {
 
       mySeed.addSideEffect('getMoreHits', (effects, hits) => {
         Promise.resolve()
-                      .then(() => effects.incHits(hits))
+               .then(() => effects.incHits(hits))
       });
 
       const {getState, effects} = wrap();

@@ -156,6 +156,20 @@ export default (bottle) => {
         });
       }
 
+    /**
+     * Allows your method access to state AND effects in one call.
+     * @param name {string}
+     * @param method {function}
+     */
+      addStateSideEffect (name, method) {
+        this.addEffect(name, (effects, ...args) => {
+          return (state) => {
+            method(effects, state, ...args);
+            return state;
+          }
+        });
+      }
+
       /** adds a series of endpoints for handling array data */
       addArrayPropAndSetEffects (name, value = [], methods = 'push,unshift,map,element') {
         if (methods) {
