@@ -16,3 +16,8 @@ adjusted `shift(To` in code and README
 ## 0.0.5
 
 added `addStateSideEffect`
+
+## 0.0.6
+
+fixed bug where only setting local storage in the constructor worked.
+Adding local storage only

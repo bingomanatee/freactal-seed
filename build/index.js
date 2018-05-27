@@ -116,9 +116,6 @@ var external__lodash__default = /*#__PURE__*/__webpack_require__.n(external__lod
       }
       this._effectsMap = new Map();
       this._initializers = [];
-      if (this.serializationSource === container.SEED_SERIALIZATION_LOCAL_STORAGE) {
-        this.addLocalStorageMiddleware();
-      }
     }
 
     get initialState() {
@@ -357,10 +354,11 @@ var external__lodash__default = /*#__PURE__*/__webpack_require__.n(external__lod
     }
 
     get middleware() {
+      if (container.localStorage && this.serializationSource === container.SEED_SERIALIZATION_LOCAL_STORAGE) this._addLocalStorageMiddleware(); // add it at the end of any custom middleware.
       return this._middleware.slice(0);
     }
 
-    addLocalStorageMiddleware() {
+    _addLocalStorageMiddleware() {
       if (container.localStorage) {
         console.log('---- enabling local storage ----');
         this.addMiddleware(freactalCtx => {

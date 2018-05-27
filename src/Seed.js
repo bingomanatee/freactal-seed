@@ -7,7 +7,6 @@ export default (bottle) => {
         if (serializationSource === true) {
           serializationSource = container.SEED_SERIALIZATION_LOCAL_STORAGE;
         }
-        this.serializationSource = serializationSource;
         this._propsMap = new Map();
         this._middleware = [];
         for (let key in initialState) {
@@ -15,9 +14,8 @@ export default (bottle) => {
         }
         this._effectsMap = new Map();
         this._initializers = [];
-        if (this.serializationSource === container.SEED_SERIALIZATION_LOCAL_STORAGE) {
-          this.addLocalStorageMiddleware();
-        }
+        this._localStorageAdded = false;
+        this._serializationSource = serializationSource;
       }
 
       get initialState () {
@@ -50,6 +48,18 @@ export default (bottle) => {
 
       useLocalStorage (use = true) {
         this.serializationSource = use ? container.SEED_SERIALIZATION_LOCAL_STORAGE : container.SEED_SERIALIZATION_NONE;
+      }
+
+      serializationSource
+      get serializationSource () {
+        return this._serializationSource;
+      }
+
+      set serializationSource (value) {
+        if ((value !== this._serializationSource) && this._localStorageAdded) {
+          throw new Error('attempt to change serialization type after it has been added to the middleware');
+        }
+        this._serializationSource = value;
       }
 
       /**
@@ -156,11 +166,11 @@ export default (bottle) => {
         });
       }
 
-    /**
-     * Allows your method access to state AND effects in one call.
-     * @param name {string}
-     * @param method {function}
-     */
+      /**
+       * Allows your method access to state AND effects in one call.
+       * @param name {string}
+       * @param method {function}
+       */
       addStateSideEffect (name, method) {
         this.addEffect(name, (effects, ...args) => {
           return (state) => {
@@ -259,11 +269,14 @@ export default (bottle) => {
       }
 
       get middleware () {
+        if (container.localStorage && this.serializationSource === container.SEED_SERIALIZATION_LOCAL_STORAGE) {
+          this._addLocalStorageMiddleware();
+        } // add it at the end of any custom middleware.
         return this._middleware.slice(0);
       }
 
-      addLocalStorageMiddleware () {
-        if (container.localStorage) {
+      _addLocalStorageMiddleware () {
+        if (container.localStorage && !this._localStorageAdded) {
           console.log('---- enabling local storage ----')
           this.addMiddleware((freactalCtx) => {
             this._propsMap.forEach((data, key) => {
@@ -272,7 +285,8 @@ export default (bottle) => {
               this._serialize(key, value);
             });
             return freactalCtx;
-          })
+          });
+          this._localStorageAdded = true;
         }
       }
 
