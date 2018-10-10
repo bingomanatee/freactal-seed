@@ -104,11 +104,11 @@ var external__lodash__default = /*#__PURE__*/__webpack_require__.n(external__lod
 /* harmony default export */ var src_Seed = (bottle => {
   bottle.constant('noop', a => a);
   bottle.factory('Seed', container => class Seed {
+
     constructor(initialState = {}, serializationSource = container.SEED_SERIALIZATION_NONE) {
       if (serializationSource === true) {
         serializationSource = container.SEED_SERIALIZATION_LOCAL_STORAGE;
       }
-      this.serializationSource = serializationSource;
       this._propsMap = new Map();
       this._middleware = [];
       for (let key in initialState) {
@@ -116,6 +116,8 @@ var external__lodash__default = /*#__PURE__*/__webpack_require__.n(external__lod
       }
       this._effectsMap = new Map();
       this._initializers = [];
+      this._localStorageAdded = false;
+      this._serializationSource = serializationSource;
     }
 
     get initialState() {
@@ -131,10 +133,29 @@ var external__lodash__default = /*#__PURE__*/__webpack_require__.n(external__lod
             }
           }
         });
+        if (this.initialStateFilter) {
+          return this.initialStateFilter(hash);
+        }
         return hash;
       };
     }
 
+    get initialStateFilter() {
+      return this._initialStateFilter;
+    }
+
+    set initialStateFilter(value) {
+      if (value && !external__lodash__default.a.isFunction(value)) {
+        throw new Error('initialStateFilter must be function ');
+      }
+
+      this._initialStateFilter = value;
+    }
+
+    /**
+     * Computed seems buggy in freactal; not enabling it here.
+     * @returns {{}}
+     */
     get computed() {
       return {};
     }
@@ -142,11 +163,25 @@ var external__lodash__default = /*#__PURE__*/__webpack_require__.n(external__lod
     get effects() {
       let hash = {};
       this._effectsMap.forEach((value, key) => hash[key] = value);
+      if (this._initializers.length) {
+        hash.initialize = state => this._makeInitializers(hash);
+      }
       return hash;
     }
 
     useLocalStorage(use = true) {
       this.serializationSource = use ? container.SEED_SERIALIZATION_LOCAL_STORAGE : container.SEED_SERIALIZATION_NONE;
+    }
+
+    get serializationSource() {
+      return this._serializationSource;
+    }
+
+    set serializationSource(value) {
+      if (value !== this._serializationSource && this._localStorageAdded) {
+        throw new Error('attempt to change serialization type after it has been added to the middleware');
+      }
+      this._serializationSource = value;
     }
 
     /**
@@ -156,6 +191,7 @@ var external__lodash__default = /*#__PURE__*/__webpack_require__.n(external__lod
      */
     addEffect(key, method) {
       this._effectsMap.set(key, method);
+      return this;
     }
 
     /**
@@ -165,32 +201,38 @@ var external__lodash__default = /*#__PURE__*/__webpack_require__.n(external__lod
      * @param key {string} prop name
      * @param value {var} initial value of the prop.
      * @param type {string} the type of value to be stored.
+     * @param options {Object} extensions
      */
-    addStateProp(key, value = null, type = container.SEED_TYPE_STRING) {
+    addStateProp(key, value = null, type = container.SEED_TYPE_STRING, options = {}) {
       if (this._propsMap.has(key)) {
         let data = this._propsMap.get(key);
         data.value = value;
         data.type = type;
         this._propsMap.set(key, data);
       } else {
-        this._propsMap.set(key, { value, type });
+        this._propsMap.set(key, Object.assign({}, options, { value, type }));
       }
+      return this;
     }
 
-    addStateString(key, value) {
-      this.addStateProp(key, value, container.SEED_TYPE_STRING);
+    addStateString(key, value, options = {}) {
+      this.addStateProp(key, value, container.SEED_TYPE_STRING, options);
+      return this;
     }
 
-    addStateInt(key, value) {
-      this.addStateProp(key, value, container.SEED_TYPE_INT);
+    addStateInt(key, value, options = {}) {
+      this.addStateProp(key, value, container.SEED_TYPE_INT, options);
+      return this;
     }
 
-    addStateObject(key, value) {
-      this.addStateProp(key, value, container.SEED_TYPE_OBJECT);
+    addStateObject(key, value, options = {}) {
+      this.addStateProp(key, value, container.SEED_TYPE_OBJECT, options);
+      return this;
     }
 
-    addStateFloat(key, value) {
-      this.addStateProp(key, value, container.SEED_TYPE_FLOAT);
+    addStateFloat(key, value, options = {}) {
+      this.addStateProp(key, value, container.SEED_TYPE_FLOAT, options);
+      return this;
     }
 
     /**
@@ -199,39 +241,76 @@ var external__lodash__default = /*#__PURE__*/__webpack_require__.n(external__lod
      *   addPropAndSetEffect both creates a property
      *
      *
-     * @param name
-     * @param value
-     * @param type
+     * @param name {String}
+     * @param value {var}
+     * @param type {String}
+     * @param options {Object}
      */
-    addPropAndSetEffect(name, value, type = container.SEED_TYPE_STRING) {
-      this.addStateProp(name, value, type);
-      this._addSetEffect(name, type);
+    addPropAndSetEffect(name, value, type = container.SEED_TYPE_STRING, options = {}) {
+      this.addStateProp(name, value, type, options);
+      this._addSetEffect(name, type, options);
+      return this;
     }
 
-    addStringAndSetEffect(name, value) {
-      this.addPropAndSetEffect(name, value, container.SEED_TYPE_STRING);
+    addStringAndSetEffect(name, value, options = {}) {
+      this.addPropAndSetEffect(name, value, container.SEED_TYPE_STRING, options);
+      return this;
     }
 
-    addIntAndSetEffect(name, value) {
-      this.addPropAndSetEffect(name, value, container.SEED_TYPE_INT);
+    addIntAndSetEffect(name, value, options = {}) {
+      this.addPropAndSetEffect(name, value, container.SEED_TYPE_INT, options);
+      return this;
     }
 
-    addFloatAndSetEffect(name, value) {
-      this.addPropAndSetEffect(name, value, container.SEED_TYPE_FLOAT);
+    addFloatAndSetEffect(name, value, options = {}) {
+      this.addPropAndSetEffect(name, value, container.SEED_TYPE_FLOAT, options);
+      return this;
     }
 
-    addObjectAndSetEffect(name, value) {
-      this.addPropAndSetEffect(name, value, container.SEED_TYPE_OBJECT);
+    addObjectAndSetEffect(name, value, options = {}) {
+      this.addPropAndSetEffect(name, value, container.SEED_TYPE_OBJECT, options);
+      return this;
     }
 
-    _addSetEffect(name, type = container.SEED_TYPE_STRING) {
+    _addSetEffect(name, type = container.SEED_TYPE_STRING, options = {}) {
       let effectName = 'set' + external__lodash__default.a.upperFirst(name);
+      const { onSet, filterSet } = options;
       // @TODO: validation ??
-      this.addEffect(effectName, container.update((state, value) => {
-        let hash = {};
-        hash[name] = value;
-        return hash;
-      }));
+      if (onSet) {
+        let updateEffectName = 'update' + external__lodash__default.a.upperFirst(name);
+
+        this.addEffect(updateEffectName, (effects, value) => state => {
+          if (filterSet) {
+            try {
+              value = filterSet(value);
+            } catch (err) {
+              console.log('error setting ', name, 'to', value, err.message);
+              return state;
+            }
+          }
+          let hash = {};
+          hash[name] = value;
+          return Object.assign({}, state, hash);
+        });
+        this.addEffect(effectName, (effects, value) => state => {
+          let onSetAction = external__lodash__default.a.isString(onSet) ? effects[onSet] : state => onSet(effects, state);
+          return effects[updateEffectName](value).then(onSetAction);
+        });
+      } else {
+        this.addEffect(effectName, (effects, value) => state => {
+          if (filterSet) {
+            try {
+              value = filterSet(value);
+            } catch (err) {
+              console.log('error setting ', name, 'to', value, err.message);
+              return state;
+            }
+          }
+          let hash = {};
+          hash[name] = value;
+          return Object.assign({}, state, hash);
+        });
+      }
     }
 
     /**
@@ -250,6 +329,7 @@ var external__lodash__default = /*#__PURE__*/__webpack_require__.n(external__lod
         method(effects, ...args);
         return container.noop;
       });
+      return this;
     }
 
     /**
@@ -258,12 +338,11 @@ var external__lodash__default = /*#__PURE__*/__webpack_require__.n(external__lod
      * @param method {function}
      */
     addStateSideEffect(name, method) {
-      this.addEffect(name, (effects, ...args) => {
-        return state => {
-          method(effects, state, ...args);
-          return state;
-        };
+      this.addEffect(name, (effects, ...args) => state => {
+        method(effects, state, ...args);
+        return state;
       });
+      return this;
     }
 
     /** adds a series of endpoints for handling array data */
@@ -324,15 +403,17 @@ var external__lodash__default = /*#__PURE__*/__webpack_require__.n(external__lod
           return state;
         });
       });
+      return this;
     }
 
-    addBoolPropAndEffects(name, value) {
-      this.addStateProp(name, !!value, container.SEED_TYPE_BOOLEAN);
-      this._addBoolEffect(name);
+    addBoolPropAndEffects(name, value, options) {
+      this.addStateProp(name, !!value, container.SEED_TYPE_BOOLEAN, options);
+      this._addBoolEffect(name, options);
+      return this;
     }
 
-    _addBoolEffect(name) {
-      this._addSetEffect(name, container.SEED_TYPE_BOOLEAN);
+    _addBoolEffect(name, options) {
+      this._addSetEffect(name, container.SEED_TYPE_BOOLEAN, options);
       this.addEffect(`${name}On`, container.update(state => {
         let hash = {};
         hash[name] = true;
@@ -343,6 +424,7 @@ var external__lodash__default = /*#__PURE__*/__webpack_require__.n(external__lod
         hash[name] = false;
         return hash;
       }));
+      return this;
     }
 
     /**
@@ -351,15 +433,18 @@ var external__lodash__default = /*#__PURE__*/__webpack_require__.n(external__lod
      */
     addMiddleware(method) {
       this._middleware.push(method);
+      return this;
     }
 
     get middleware() {
-      if (container.localStorage && this.serializationSource === container.SEED_SERIALIZATION_LOCAL_STORAGE) this._addLocalStorageMiddleware(); // add it at the end of any custom middleware.
+      if (container.localStorage && this.serializationSource === container.SEED_SERIALIZATION_LOCAL_STORAGE) {
+        this._addLocalStorageMiddleware();
+      } // add it at the end of any custom middleware.
       return this._middleware.slice(0);
     }
 
     _addLocalStorageMiddleware() {
-      if (container.localStorage) {
+      if (container.localStorage && !this._localStorageAdded) {
         console.log('---- enabling local storage ----');
         this.addMiddleware(freactalCtx => {
           this._propsMap.forEach((data, key) => {
@@ -369,6 +454,7 @@ var external__lodash__default = /*#__PURE__*/__webpack_require__.n(external__lod
           });
           return freactalCtx;
         });
+        this._localStorageAdded = true;
       }
     }
 
@@ -394,6 +480,7 @@ var external__lodash__default = /*#__PURE__*/__webpack_require__.n(external__lod
         data.serializer = serializer;
         data.deserializer = deSerializer;
       }
+      return this;
     }
 
     /**
@@ -403,22 +490,55 @@ var external__lodash__default = /*#__PURE__*/__webpack_require__.n(external__lod
      */
     addInitializer(method, order = 0) {
       this._initializers.push({ method, order });
+      return this;
     }
 
     _makeInitializers() {
-      return (effects, state) => {
-        console.log('initializer: state', state);
-        if (!this._initializers.length) {
-          return container.noop;
-        }
-        let initializers = external__lodash__default()(this._initializers).sortBy('order').map('method').map(method => external__lodash__default.a.isString ? effects[method] : method).value();
+      let initializers = external__lodash__default()(this._initializers).sortBy('order').map('method').value();
 
-        let initializer = initializers.pop();
-        while (initializers.length) {
-          initializer = ((next, prev) => prev.then(next))(initializer, initializers.pop());
+      if (!initializers.length) {
+        return container.noop;
+      }
+
+      return state => new Promise(function ($return, $error) {
+        var $Loop_4_trampoline, $Loop_4_local;
+        function $Loop_4_step() {
+          var [init, $iterator_init_3] = $Loop_4_local();return $Loop_4.bind(this, init, $iterator_init_3);
         }
-        return effects => initializer(effects).then(container.noop);
-      };
+        function $Loop_4(init, $iterator_init_3) {
+          $Loop_4_local = function () {
+            return [init, $iterator_init_3];
+          };
+          if (!($iterator_init_3[1] = $iterator_init_3[0].next()).done && ((init = $iterator_init_3[1].value) || true)) {
+            let newState;
+            return Promise.resolve(init(state)).then(function ($await_6) {
+              try {
+                newState = $await_6;
+                state = newState || state;
+                return $Loop_4_step;
+              } catch ($boundEx) {
+                return $error($boundEx);
+              }
+            }, $error);
+          } else return [1];
+        }
+
+        return ($Loop_4_trampoline = function (q) {
+          while (q) {
+            if (q.then) return void q.then($Loop_4_trampoline, $error);try {
+              if (q.pop) {
+                if (q.length) return q.pop() ? $Loop_4_exit.call(this) : q;else q = $Loop_4_step;
+              } else q = q.call(this);
+            } catch (_exception) {
+              return $error(_exception);
+            }
+          }
+        }.bind(this))($Loop_4.bind(this, undefined, [initializers[Symbol.iterator]()]));
+
+        function $Loop_4_exit() {
+          return $return(state);
+        }
+      });
     }
 
     /**

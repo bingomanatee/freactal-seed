@@ -103,7 +103,6 @@ tap.test('Seed', (suite) => {
     aapTest.end();
   });
 
-
   suite.test('addSideEffect', (seTest) => {
 
     seTest.test('method that returns a promise', async (serTest) => {
@@ -192,7 +191,7 @@ tap.test('Seed', (suite) => {
 
       mySeed.addSideEffect('getMoreHits', (effects, hits) => {
         Promise.resolve()
-               .then(() => effects.incHits(hits))
+          .then(() => effects.incHits(hits))
       });
 
       const {getState, effects} = wrap();
@@ -206,7 +205,49 @@ tap.test('Seed', (suite) => {
       sargTest.same(getState().hits, 7, 'has 7 now');
 
       sargTest.end();
-    })
+    });
+
+    seTest.test('with filter', async (sargTest) => {
+      let resolve = null;
+      const {mySeed, bottle, wrap} = _init();
+      mySeed.addFloatAndSetEffect('height', 0, {
+        filterSet: (value) => Math.max(value, 0)
+      });
+
+
+      const {getState, effects} = wrap();
+
+      sargTest.same(getState().height, 0, 'starts with no hits');
+      await effects.setHeight(4);
+      sargTest.same(getState().height, 4, 'has 4 now');
+      await effects.setHeight(-3);
+      sargTest.same(getState().height, 0, 'has 0 now');
+
+      sargTest.end();
+    });
+
+    seTest.test('with onSet', async (sargTest) => {
+      let resolve = null;
+      const {mySeed, bottle, wrap} = _init();
+      mySeed.addFloatAndSetEffect('absHeight', 0);
+      mySeed.addFloatAndSetEffect('height', 0, {
+        onSet: (effects, state) => {
+          return effects.setAbsHeight(Math.abs(state.height));
+        }
+      });
+
+      const {getState, effects} = wrap();
+
+      sargTest.same(getState().height, 0, 'starts with no hits');
+      await effects.setHeight(4);
+      sargTest.same(getState().height, 4, 'has 4 now');
+      sargTest.same(getState().absHeight, 4, 'has 4 now');
+      await effects.setHeight(-3);
+      sargTest.same(getState().height, -3, 'has -3 now');
+      sargTest.same(getState().absHeight, 3, 'has 3 now');
+
+      sargTest.end();
+    });
 
     seTest.end();
   });

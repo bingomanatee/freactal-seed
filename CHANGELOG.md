@@ -21,3 +21,8 @@ added `addStateSideEffect`
 
 fixed bug where only setting local storage in the constructor worked.
 Adding local storage only
+
+## 0.0.7
+
+Added currying, optional parameter for serialization/deserialization hooks
+Adding filter options for set effects

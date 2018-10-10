@@ -3,7 +3,8 @@ import _ from 'lodash';
 export default (bottle) => {
   bottle.constant('noop', (a) => a);
   bottle.factory('Seed', (container) => class Seed {
-      constructor (initialState = {}, serializationSource = container.SEED_SERIALIZATION_NONE) {
+
+      constructor(initialState = {}, serializationSource = container.SEED_SERIALIZATION_NONE) {
         if (serializationSource === true) {
           serializationSource = container.SEED_SERIALIZATION_LOCAL_STORAGE;
         }
@@ -18,7 +19,7 @@ export default (bottle) => {
         this._serializationSource = serializationSource;
       }
 
-      get initialState () {
+      get initialState() {
         return () => {
           let hash = {};
           this._propsMap.forEach((data, key) => {
@@ -26,36 +27,58 @@ export default (bottle) => {
             if (container.localStorageHas(key)) {
               if (data.deserialize) {
                 hash[key] = data.deserialize(container.localStorage.getItem(key));
-              } else {
+              }
+              else {
                 hash[key] = container.deserialize(container.localStorage.getItem(key),
                   data.type);
               }
             }
           });
+          if (this.initialStateFilter) {
+            return this.initialStateFilter(hash);
+          }
           return hash;
         }
       }
 
-      get computed () {
+      get initialStateFilter() {
+        return this._initialStateFilter;
+      }
+
+      set initialStateFilter(value) {
+        if (value && (!_.isFunction(value))) {
+          throw new Error('initialStateFilter must be function ');
+        }
+
+        this._initialStateFilter = value;
+      }
+
+      /**
+       * Computed seems buggy in freactal; not enabling it here.
+       * @returns {{}}
+       */
+      get computed() {
         return ({});
       }
 
-      get effects () {
+      get effects() {
         let hash = {};
         this._effectsMap.forEach((value, key) => hash[key] = value);
+        if (this._initializers.length) {
+          hash.initialize = (state) => this._makeInitializers(hash);
+        }
         return hash;
       }
 
-      useLocalStorage (use = true) {
+      useLocalStorage(use = true) {
         this.serializationSource = use ? container.SEED_SERIALIZATION_LOCAL_STORAGE : container.SEED_SERIALIZATION_NONE;
       }
 
-      serializationSource
-      get serializationSource () {
+      get serializationSource() {
         return this._serializationSource;
       }
 
-      set serializationSource (value) {
+      set serializationSource(value) {
         if ((value !== this._serializationSource) && this._localStorageAdded) {
           throw new Error('attempt to change serialization type after it has been added to the middleware');
         }
@@ -67,8 +90,9 @@ export default (bottle) => {
        * @param key {string} the name of the effect
        * @param method {function} the effect
        */
-      addEffect (key, method) {
+      addEffect(key, method) {
         this._effectsMap.set(key, method);
+        return this;
       }
 
       /**
@@ -78,8 +102,9 @@ export default (bottle) => {
        * @param key {string} prop name
        * @param value {var} initial value of the prop.
        * @param type {string} the type of value to be stored.
+       * @param options {Object} extensions
        */
-      addStateProp (key, value = null, type = container.SEED_TYPE_STRING) {
+      addStateProp(key, value = null, type = container.SEED_TYPE_STRING, options = {}) {
         if (this._propsMap.has(key)) {
           let data = this._propsMap.get(key);
           data.value = value;
@@ -87,24 +112,29 @@ export default (bottle) => {
           this._propsMap.set(key, data);
         }
         else {
-          this._propsMap.set(key, {value, type});
+          this._propsMap.set(key, Object.assign({}, options, {value, type}));
         }
+        return this;
       }
 
-      addStateString (key, value) {
-        this.addStateProp(key, value, container.SEED_TYPE_STRING);
+      addStateString(key, value, options = {}) {
+        this.addStateProp(key, value, container.SEED_TYPE_STRING, options);
+        return this;
       }
 
-      addStateInt (key, value) {
-        this.addStateProp(key, value, container.SEED_TYPE_INT);
+      addStateInt(key, value, options = {}) {
+        this.addStateProp(key, value, container.SEED_TYPE_INT, options);
+        return this;
       }
 
-      addStateObject (key, value) {
-        this.addStateProp(key, value, container.SEED_TYPE_OBJECT);
+      addStateObject(key, value, options = {}) {
+        this.addStateProp(key, value, container.SEED_TYPE_OBJECT, options);
+        return this;
       }
 
-      addStateFloat (key, value) {
-        this.addStateProp(key, value, container.SEED_TYPE_FLOAT);
+      addStateFloat(key, value, options = {}) {
+        this.addStateProp(key, value, container.SEED_TYPE_FLOAT, options);
+        return this;
       }
 
       /**
@@ -113,39 +143,78 @@ export default (bottle) => {
        *   addPropAndSetEffect both creates a property
        *
        *
-       * @param name
-       * @param value
-       * @param type
+       * @param name {String}
+       * @param value {var}
+       * @param type {String}
+       * @param options {Object}
        */
-      addPropAndSetEffect (name, value, type = container.SEED_TYPE_STRING) {
-        this.addStateProp(name, value, type);
-        this._addSetEffect(name, type);
+      addPropAndSetEffect(name, value, type = container.SEED_TYPE_STRING, options = {}) {
+        this.addStateProp(name, value, type, options);
+        this._addSetEffect(name, type, options);
+        return this;
       }
 
-      addStringAndSetEffect (name, value) {
-        this.addPropAndSetEffect(name, value, container.SEED_TYPE_STRING);
+      addStringAndSetEffect(name, value, options = {}) {
+        this.addPropAndSetEffect(name, value, container.SEED_TYPE_STRING, options);
+        return this;
       }
 
-      addIntAndSetEffect (name, value) {
-        this.addPropAndSetEffect(name, value, container.SEED_TYPE_INT);
+      addIntAndSetEffect(name, value, options = {}) {
+        this.addPropAndSetEffect(name, value, container.SEED_TYPE_INT, options);
+        return this;
       }
 
-      addFloatAndSetEffect (name, value) {
-        this.addPropAndSetEffect(name, value, container.SEED_TYPE_FLOAT);
+      addFloatAndSetEffect(name, value, options = {}) {
+        this.addPropAndSetEffect(name, value, container.SEED_TYPE_FLOAT, options);
+        return this;
       }
 
-      addObjectAndSetEffect (name, value) {
-        this.addPropAndSetEffect(name, value, container.SEED_TYPE_OBJECT);
+      addObjectAndSetEffect(name, value, options = {}) {
+        this.addPropAndSetEffect(name, value, container.SEED_TYPE_OBJECT, options);
+        return this;
       }
 
-      _addSetEffect (name, type = container.SEED_TYPE_STRING) {
+      _addSetEffect(name, type = container.SEED_TYPE_STRING, options = {}) {
         let effectName = 'set' + _.upperFirst(name);
+        const {onSet, filterSet} = options;
         // @TODO: validation ??
-        this.addEffect(effectName, container.update((state, value) => {
-          let hash = {};
-          hash[name] = value;
-          return hash;
-        }));
+        if (onSet) {
+          let updateEffectName = 'update' + _.upperFirst(name);
+
+          this.addEffect(updateEffectName, (effects, value) => (state) => {
+            if (filterSet) {
+              try {
+                value = filterSet(value);
+              } catch (err) {
+                console.log('error setting ', name, 'to', value, err.message);
+                return state;
+              }
+            }
+            let hash = {};
+            hash[name] = value;
+            return Object.assign({}, state, hash);
+          });
+          this.addEffect(effectName, (effects, value) => (state) => {
+            let onSetAction = _.isString(onSet) ? effects[onSet] : (state) => onSet(effects,state);
+            return effects[updateEffectName](value)
+              .then(onSetAction);
+          });
+        }
+        else {
+          this.addEffect(effectName, (effects, value) => (state) => {
+            if (filterSet) {
+              try {
+                value = filterSet(value);
+              } catch (err) {
+                console.log('error setting ', name, 'to', value, err.message);
+                return state;
+              }
+            }
+            let hash = {};
+            hash[name] = value;
+            return Object.assign({}, state, hash);
+          });
+        }
       }
 
       /**
@@ -155,7 +224,7 @@ export default (bottle) => {
        * @param name {String}
        * @param method {function}
        */
-      addSideEffect (name, method) {
+      addSideEffect(name, method) {
         this.addEffect(name, function (effects, ...args) {
           if (_.isString(method)) {
             effects[method](effects, ...args);
@@ -164,6 +233,7 @@ export default (bottle) => {
           method(effects, ...args);
           return container.noop;
         });
+        return this;
       }
 
       /**
@@ -171,29 +241,32 @@ export default (bottle) => {
        * @param name {string}
        * @param method {function}
        */
-      addStateSideEffect (name, method) {
+      addStateSideEffect(name, method) {
         this.addEffect(name, (effects, ...args) => {
           return (state) => {
             method(effects, state, ...args);
             return state;
           }
         });
+        return this;
       }
 
       /** adds a series of endpoints for handling array data */
-      addArrayPropAndSetEffects (name, value = [], methods = 'push,unshift,map,element') {
+      addArrayPropAndSetEffects(name, value = [], methods = 'push,unshift,map,element') {
         if (methods) {
           if (_.isString(methods)) {
             methods = methods.split(',');
           }
-        } else {
+        }
+        else {
           methods = false;
         }
 
         const add = (name, exec) => {
           if (!methods || _.includes(methods, name.toLowerCase())) {
             exec();
-          } else {
+          }
+          else {
             console.log('addArrayPropAndSetEffects -- skipping ', name);
           }
         };
@@ -239,15 +312,17 @@ export default (bottle) => {
             return state;
           });
         });
+        return this;
       }
 
-      addBoolPropAndEffects (name, value) {
-        this.addStateProp(name, !!value, container.SEED_TYPE_BOOLEAN);
-        this._addBoolEffect(name);
+      addBoolPropAndEffects(name, value, options) {
+        this.addStateProp(name, !!value, container.SEED_TYPE_BOOLEAN, options);
+        this._addBoolEffect(name, options);
+        return this;
       }
 
-      _addBoolEffect (name) {
-        this._addSetEffect(name, container.SEED_TYPE_BOOLEAN);
+      _addBoolEffect(name, options) {
+        this._addSetEffect(name, container.SEED_TYPE_BOOLEAN, options);
         this.addEffect(`${name}On`, container.update((state) => {
           let hash = {};
           hash[name] = true;
@@ -258,24 +333,27 @@ export default (bottle) => {
           hash[name] = false;
           return hash;
         }))
+        return this;
       }
 
       /**
        * adds a middleware pipe to the middleware list.
        * @param method {function}
        */
-      addMiddleware (method) {
+      addMiddleware(method) {
         this._middleware.push(method);
+        return this;
       }
 
-      get middleware () {
+      get middleware() {
         if (container.localStorage && this.serializationSource === container.SEED_SERIALIZATION_LOCAL_STORAGE) {
           this._addLocalStorageMiddleware();
         } // add it at the end of any custom middleware.
         return this._middleware.slice(0);
+        return this;
       }
 
-      _addLocalStorageMiddleware () {
+      _addLocalStorageMiddleware() {
         if (container.localStorage && !this._localStorageAdded) {
           console.log('---- enabling local storage ----')
           this.addMiddleware((freactalCtx) => {
@@ -290,7 +368,7 @@ export default (bottle) => {
         }
       }
 
-      _serialize (key, value) {
+      _serialize(key, value) {
         if (!this._propsMap.has(key)) {
           return;
         }
@@ -301,46 +379,48 @@ export default (bottle) => {
             return;
           }
           container.localStorage.setItem(key, data.serialize(value));
-        } else {
+        }
+        else {
           container.localStorage.setItem(key, container.serialize(value, data.type));
         }
       }
 
-      setSerialization (name, serializer, deSerializer) {
+      setSerialization(name, serializer, deSerializer) {
         if (this._propsMap.has(name)) {
           let data = this._propsMap.get(name);
           data.serializer = serializer;
           data.deserializer = deSerializer;
         }
+        return this;
       }
+
 
       /**
        * note - method can be a function or a name of another effect (string).
        * @param method {string | function}
        * @param order {number}
        */
-      addInitializer (method, order = 0) {
+      addInitializer(method, order = 0) {
         this._initializers.push({method, order});
+        return this;
       }
 
-      _makeInitializers () {
-        return (effects, state) => {
-          console.log('initializer: state', state);
-          if (!this._initializers.length) {
-            return container.noop;
-          }
-          let initializers = _(this._initializers)
-            .sortBy('order')
-            .map('method')
-            .map((method) => _.isString ? effects[method] : method)
-            .value();
+      _makeInitializers() {
+        let initializers = _(this._initializers)
+          .sortBy('order')
+          .map('method')
+          .value();
 
-          let initializer = initializers.pop();
-          while (initializers.length) {
-            initializer = ((next, prev) => prev.then(next))(initializer, initializers.pop());
+        if (!initializers.length) {
+          return container.noop;
+        }
+
+        return async (state) => {
+          for (let init of initializers) {
+            let newState = await init(state);
+            state = newState || state;
           }
-          return (effects) => initializer(effects)
-            .then(container.noop);
+          return state;
         }
       }
 
@@ -352,7 +432,7 @@ export default (bottle) => {
        *
        * @returns {{effects, initialState: *, middleware: *}}
        */
-      toHash () {
+      toHash() {
         return {
           effects: this.effects,
           initialState: this.initialState,
