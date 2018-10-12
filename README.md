@@ -106,13 +106,26 @@ mySeed.addStateProp('count', 0, bottle.container.SEED_TYPE_INT);
 note: the type does NOT filter/control what values can be put in or out
 of the field, just how it is serialized/deserialized from local storage.
 
-### `addPropAndSetEffect(name, value, type)`
+### `addPropAndSetEffect(name, value, type, options)`
 Calls addEffect (see above) and adds a `set[Name]` method.
 ```` javascript
 mySeed.addPropAndSetEffect('user', 0, bottle.container.SEED_TYPE_OBJECT);
 // -- in a component
 this.props.effects.setUser({id: 1, name: 'fred'});
 ````
+
+#### Options
+
+Options have several experimental features:
+
+* `onSet(state, effects)` adds a hook that triggers after a value is set. 
+  if it returns a promise its assumed to be a promise from an effect -- i.e.,
+  the result is now the current state. (if nothing or a non-promise is returned,
+  the state is preserved).
+* `serialize(item)` allows for a custom stringification of an item. It must
+  return a string. Its only used if the seed's serialization is enabled.
+* `deserialize(string)` is the inverse of serialize. It converts a string 
+  (from localStorage) into the retrieved value.
 
 ### `addSideEffect(name, method)`
 this is a bit tricky. It allows creation
@@ -173,7 +186,7 @@ return item;
 });
 ````
 
-### `addBoolPropAndEffects(key, value)`
+### `addBoolPropAndEffects(key, value, options)`
 Calls AddPropAndStateEffect (with type bool). Also adds a pair of methods
 
 * `~name~On` sets the value to true
@@ -183,14 +196,14 @@ Calls AddPropAndStateEffect (with type bool). Also adds a pair of methods
 
 To obviate the necessity of the type field there are methods that set the type for you:
 
-* `addStateInt(key, value)`
-* `addStateString(key, value)`
-* `addStateObject(key, value)`
-* `addStateFloat(key, value)`
-* `addIntAndSetEffect(key, value)`
-* `addStringAndSetEffect(key, value)`
-* `addObjectAndSetEffect(key, value)`
-* `addFloatAndSetEffect(key, value)`
+* `addStateInt(key, value, options)`
+* `addStateString(key, value, options)`
+* `addStateObject(key, value, options)`
+* `addStateFloat(key, value, options)`
+* `addIntAndSetEffect(key, value, options)`
+* `addStringAndSetEffect(key, value, options)`
+* `addObjectAndSetEffect(key, value, options)`
+* `addFloatAndSetEffect(key, value, options)`
 
 ### Appendix: Serialization
 

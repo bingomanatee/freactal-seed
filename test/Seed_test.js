@@ -226,27 +226,53 @@ tap.test('Seed', (suite) => {
       sargTest.end();
     });
 
-    seTest.test('with onSet', async (sargTest) => {
-      let resolve = null;
-      const {mySeed, bottle, wrap} = _init();
-      mySeed.addFloatAndSetEffect('absHeight', 0);
-      mySeed.addFloatAndSetEffect('height', 0, {
-        onSet: (effects, state) => {
-          return effects.setAbsHeight(Math.abs(state.height));
-        }
+    seTest.test('with onSet', (saTest) => {
+      saTest.test('returning state', async (sargTest) => {
+        let resolve = null;
+        const {mySeed, bottle, wrap} = _init();
+        mySeed.addFloatAndSetEffect('absHeight', 0);
+        mySeed.addFloatAndSetEffect('height', 0, {
+          onSet: (effects, state) => {
+            return effects.setAbsHeight(Math.abs(state.height));
+          }
+        });
+
+        const {getState, effects} = wrap();
+
+        sargTest.same(getState().height, 0, 'starts with no hits');
+        await effects.setHeight(4);
+        sargTest.same(getState().height, 4, 'has 4 now');
+        sargTest.same(getState().absHeight, 4, 'has 4 now');
+        await effects.setHeight(-3);
+        sargTest.same(getState().height, -3, 'has -3 now');
+        sargTest.same(getState().absHeight, 3, 'has 3 now');
+        sargTest.end();
       });
 
-      const {getState, effects} = wrap();
+      saTest.test('returning nothing', async (sargTest) => {
+        let resolve = null;
+        const {mySeed, bottle, wrap} = _init();
+        mySeed.addFloatAndSetEffect('absHeight', 0);
+        mySeed.addFloatAndSetEffect('height', 0, {
+          onSet: async (effects, state) => {
+            await effects.setAbsHeight(Math.abs(state.height));
+            return null;
+          }
+        });
 
-      sargTest.same(getState().height, 0, 'starts with no hits');
-      await effects.setHeight(4);
-      sargTest.same(getState().height, 4, 'has 4 now');
-      sargTest.same(getState().absHeight, 4, 'has 4 now');
-      await effects.setHeight(-3);
-      sargTest.same(getState().height, -3, 'has -3 now');
-      sargTest.same(getState().absHeight, 3, 'has 3 now');
+        const {getState, effects} = wrap();
 
-      sargTest.end();
+        sargTest.same(getState().height, 0, 'starts with no hits');
+        await effects.setHeight(4);
+        sargTest.same(getState().height, 4, 'has 4 now');
+        sargTest.same(getState().absHeight, 4, 'has 4 now');
+        await effects.setHeight(-3);
+        sargTest.same(getState().height, -3, 'has -3 now');
+        sargTest.same(getState().absHeight, 3, 'has 3 now');
+        sargTest.end();
+      });
+
+      saTest.end();
     });
 
     seTest.end();

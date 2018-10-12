@@ -292,9 +292,13 @@ var external__lodash__default = /*#__PURE__*/__webpack_require__.n(external__lod
           hash[name] = value;
           return Object.assign({}, state, hash);
         });
-        this.addEffect(effectName, (effects, value) => state => {
-          let onSetAction = external__lodash__default.a.isString(onSet) ? effects[onSet] : state => onSet(effects, state);
-          return effects[updateEffectName](value).then(onSetAction);
+        this.addEffect(effectName, (effects, value) => () => {
+          let onSetAction = external__lodash__default.a.isString(onSet) ? effects[onSet] : onSet;
+          return effects[updateEffectName](value).then(state => {
+            let oss = onSetAction(effects, state);
+            if (oss && oss.then) return oss.then;
+            return state;
+          });
         });
       } else {
         this.addEffect(effectName, (effects, value) => state => {

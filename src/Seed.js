@@ -194,10 +194,14 @@ export default (bottle) => {
             hash[name] = value;
             return Object.assign({}, state, hash);
           });
-          this.addEffect(effectName, (effects, value) => (state) => {
-            let onSetAction = _.isString(onSet) ? effects[onSet] : (state) => onSet(effects,state);
+          this.addEffect(effectName, (effects, value) => () => {
+            let onSetAction = _.isString(onSet) ? effects[onSet] : onSet;
             return effects[updateEffectName](value)
-              .then(onSetAction);
+              .then((state) => {
+                let oss = onSetAction(effects, state);
+                if (oss && oss.then) return oss.then;
+                return state
+              });
           });
         }
         else {
